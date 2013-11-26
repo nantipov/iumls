@@ -4,7 +4,7 @@ import org.palettelabs.iumls.parser.NotationElement;
 import org.palettelabs.iumls.parser.Parser;
 
 
-public class NotationException extends Exception {
+public class IumlsException extends Exception {
 
 	/**
 	 * 
@@ -18,14 +18,23 @@ public class NotationException extends Exception {
 	private Parser parser;
 	private NotationElement element;
 
-	public NotationException(String errorText, int position, int line, int column) {
+	public IumlsException(String message) {
+		super(message);
+		
+	}
+
+	public IumlsException(String message, Throwable e) {
+		super(e);
+	}
+
+	public IumlsException(String errorText, int position, int line, int column) {
 		super(errorText + "\n at line " + line + " column " + column);
 		this.position = position;
 		this.line = line;
 		this.column = column;
 	}
 
-	public NotationException(Parser parser, String errorText, int position, int line, int column) {
+	public IumlsException(Parser parser, String errorText, int position, int line, int column) {
 		super(errorText + "\n at line " + line + " column " + column);
 		this.parser = parser;
 		this.position = position;
@@ -33,14 +42,14 @@ public class NotationException extends Exception {
 		this.column = column;
 	}
 	
-	public NotationException(String errorText, Throwable e, int position, int line, int column) {
+	public IumlsException(String errorText, Throwable e, int position, int line, int column) {
 		super(errorText + "\n at line " + line + " column " + column, e);
 		this.position = position;
 		this.line = line;
 		this.column = column;
 	}
 
-	public NotationException(String errorText, NotationElement element) {
+	public IumlsException(String errorText, NotationElement element) {
 		super(errorText + "\n at line " + element.getLine() + " column " + element.getColumn());
 		this.position = element.getPosition();
 		this.line = element.getLine();
@@ -48,7 +57,7 @@ public class NotationException extends Exception {
 		this.element = element;
 	}
 
-	public NotationException(String errorText, Throwable e, NotationElement element) {
+	public IumlsException(String errorText, Throwable e, NotationElement element) {
 		super(errorText + "\n at line " + element.getLine() + " column " + element.getColumn(), e);
 		this.position = element.getPosition();
 		this.line = element.getLine();

@@ -10,11 +10,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
-import org.palettelabs.iumls.NotationException;
+import org.palettelabs.iumls.IumlsException;
 import org.palettelabs.iumls.VariableValue;
 import org.palettelabs.iumls.parser.Expression;
 import org.palettelabs.iumls.parser.ExpressionElement;
 import org.palettelabs.iumls.parser.NotationElement;
+import org.palettelabs.iumls.utils.NumberConverter;
 
 public class Computer {
 
@@ -62,11 +63,11 @@ public class Computer {
 		data.priority = priority;
 	}
 
-	public VariableValue compute(Expression expression) throws NotationException {
+	public VariableValue compute(Expression expression) throws IumlsException {
 		return compute(expression.getBaseElement());
 	}
 
-	private VariableValue compute(ExpressionElement element) throws NotationException {
+	private VariableValue compute(ExpressionElement element) throws IumlsException {
 
 		// translate to RPN (initially designed by Edsger Dijkstra)
 		Stack<ExpressionElement> stack = new Stack<ExpressionElement>();
@@ -124,30 +125,30 @@ public class Computer {
 						stackValues.push(evaluateOperator(e.getData(), argsO));
 						break;
 					case ExpressionElement.NUMBER:
-						currentElementName = "a number '" + e.data + "'";
-						stackValues.push(new VariableValue(NumberConverter.toDouble(e.data)));
+						currentElementName = "a number '" + e.getData() + "'";
+						stackValues.push(new VariableValue(NumberConverter.toDouble(e.getData())));
 						break;
 					case ExpressionElement.STRING:
-						currentElementName = "a string '" + e.data + "'";
-						stackValues.push(new VariableValue(e.data));
+						currentElementName = "a string '" + e.getData() + "'";
+						stackValues.push(new VariableValue(e.getData()));
 						break;
 					case ExpressionElement.IDENTIFIER:
-						currentElementName = "an identifier '" + e.data + "'";
+						currentElementName = "an identifier '" + e.getData() + "'";
 						String libraryNameI = "system";
-						String valueI = e.data;
-						if (e.data.indexOf(".") > -1) {
-							libraryNameI = e.data.substring(0, e.data.indexOf("."));
-							valueI = e.data.substring(e.data.indexOf(".") + 1);
+						String valueI = e.getData();
+						if (e.getData().indexOf(".") > -1) {
+							libraryNameI = e.getData().substring(0, e.getData().indexOf("."));
+							valueI = e.getData().substring(e.getData().indexOf(".") + 1);
 						}
 						stackValues.push(evaluateLibraryVariable(libraryNameI, valueI));
 						break;
 					case ExpressionElement.FUNCTION:
-						currentElementName = "a function '" + e.data + "'";
+						currentElementName = "a function '" + e.getData() + "'";
 						String libraryNameF = "system";
-						String valueF = e.data;
-						if (e.data.indexOf(".") > -1) {
-							libraryNameF = e.data.substring(0, e.data.indexOf("."));
-							valueF = e.data.substring(e.data.indexOf(".") + 1);
+						String valueF = e.getData();
+						if (e.getData().indexOf(".") > -1) {
+							libraryNameF = e.getData().substring(0, e.getData().indexOf("."));
+							valueF = e.getData().substring(e.getData().indexOf(".") + 1);
 						}
 						// check if all function arguments have a tree
 
@@ -155,9 +156,9 @@ public class Computer {
 
 						// go through an arguments list and remove empty ones
 						// (new list implementation to obey parser immutable structure approach)
-						List<ExpressionElement> __elements = new ArrayList<ExpressionElement>(e.elements.size());
-						for (ExpressionElement __e : e.elements) {
-							if (!__e.elements.isEmpty())
+						List<ExpressionElement> __elements = new ArrayList<ExpressionElement>(e.getElements().size());
+						for (ExpressionElement __e : e.getElements()) {
+							if (!__e.getElements().isEmpty())
 								__elements.add(__e);
 						}
 
@@ -176,20 +177,21 @@ public class Computer {
 			}
 			return stackValues.pop();
 		} catch (Exception exc) {
-			throw new NotationException("runtime exception on evaluating " + currentElementName, exc, currentNotationElement.position,
-					currentNotationElement.line, currentNotationElement.column);
+			throw new IumlsException("runtime exception on evaluating " + currentElementName, exc, currentNotationElement.getPosition(),
+					currentNotationElement.getLine(), currentNotationElement.getColumn());
 		}
 
 	}
 
-	private Library getLibrary(String name) throws CalcuttaToolException {
-		if (libraries.containsKey(name))
+	private Library getLibrary(String name) throws IumlsException {
+		if (libraries.containsKey(name)) {
 			return libraries.get(name);
-		else
-			throw new CalcuttaToolException("Notation::Computer:: no library '" + name + "' found");
+		} else {
+			throw new IumlsException("IUMLS::Computer:: no library '" + name + "' found");
+		}
 	}
 
-	private VariableValue executeLibraryMethod(String libraryName, String methodName, VariableValue[] arguments) throws CalcuttaToolException {
+	private VariableValue executeLibraryMethod(String libraryName, String methodName, VariableValue[] arguments) throws IumlsException {
 		Library lib = getLibrary(libraryName);
 		Class<?> __class = lib.getClass();
 		Method[] methods = __class.getMethods();
@@ -203,25 +205,23 @@ public class Computer {
 			Class<?>[] parameters = method.getParameterTypes();
 			boolean isLastVararg = (parameters.length > 0)
 					&& parameters[parameters.length - 1].isArray()
-					&& isOneOf(parameters[parameters.length - 1].getName(), "[Z", "[Lru.megafonvolga.calcutta.data.VariableValue;", "[Ljava.lang.Integer;",
+					&& isOneOf(parameters[parameters.length - 1].getName(), "[Z", "[Lorg.palettelabs.iumls.VariableValue;", "[Ljava.lang.Integer;",
 							"[Ljava.lang.Boolean;", "[Ljava.lang.Double;", "[Ljava.lang.Long;", "[Ljava.lang.String;", "[D", "[I", "[J");
 
-			//System.out.println(__class.getName() + ": " + method.getName() + ": " + libraryName + ": isVarags=" + isLastVararg + ": ann=" + method.isAnnotationPresent(ru.megafonvolga.calcutta.notation.library.Method.class));
-			
 			String annotatedMethodName = "";
 
-			if (method.isAnnotationPresent(ru.megafonvolga.calcutta.notation.library.Method.class)) {
-				ru.megafonvolga.calcutta.notation.library.Method methodAnnotation = method
-						.getAnnotation(ru.megafonvolga.calcutta.notation.library.Method.class);
+			if (method.isAnnotationPresent(org.palettelabs.iumls.computer.Method.class)) {
+				org.palettelabs.iumls.computer.Method methodAnnotation = method
+						.getAnnotation(org.palettelabs.iumls.computer.Method.class);
 				annotatedMethodName = methodAnnotation.value();
 			}
 
 			if ((annotatedMethodName == null) || annotatedMethodName.isEmpty())
 				annotatedMethodName = method.getName();
 
-			if (method.isAnnotationPresent(ru.megafonvolga.calcutta.notation.library.Method.class) && (annotatedMethodName.equals(methodName))
+			if (method.isAnnotationPresent(org.palettelabs.iumls.computer.Method.class) && (annotatedMethodName.equals(methodName))
 					&& ((parameters.length == arguments.length) || ((parameters.length < arguments.length) && isLastVararg))
-					&& method.getReturnType().getName().equals("ru.megafonvolga.calcutta.data.VariableValue")) {
+					&& method.getReturnType().getName().equals("org.palettelabs.iumls.VariableValue")) {
 				boolean matched = true;
 				for (int n = 0; n < parameters.length; n++) {
 
@@ -243,10 +243,10 @@ public class Computer {
 				Method method = methods[f];
 				if (
 						method.isAnnotationPresent(DefaultMethodHandler.class) &&
-						method.getReturnType().getName().equals("ru.megafonvolga.calcutta.data.VariableValue") &&
+						method.getReturnType().getName().equals("org.palettelabs.iumls.VariableValue") &&
 						method.getParameterTypes().length == 2 &&
 						method.getParameterTypes()[0].getName().equals("java.lang.String") &&
-						method.getParameterTypes()[1].getName().equals("[Lru.megafonvolga.calcutta.data.VariableValue")
+						method.getParameterTypes()[1].getName().equals("[Lorg.palettelabs.iumls.VariableValue")
 						)
 				{
 					foundMethod = method;
@@ -258,7 +258,7 @@ public class Computer {
 
 		// if neither regular method nor default method was found 
 		if (foundMethod == null)
-			throw new CalcuttaToolException("Notation::Computer: no method '" + methodName + "' found in library '" + libraryName + "'");
+			throw new IumlsException("IUMLS::Computer: no method '" + methodName + "' found in library '" + libraryName + "'");
 
 		try {
 			Class<?>[] parameters = foundMethod.getParameterTypes();
@@ -293,7 +293,7 @@ public class Computer {
 						o = new Double[arraySize];
 					else if (parameters[n].getName().equals("[Ljava.lang.String;"))
 						o = new String[arraySize];
-					else if (parameters[n].getName().equals("[Lru.megafonvolga.calcutta.data.VariableValue;"))
+					else if (parameters[n].getName().equals("[Lorg.palettelabs.iumls.VariableValue;"))
 						o = new VariableValue[arraySize];
 					methodArguments[n] = o;
 					// fill it with values
@@ -317,7 +317,7 @@ public class Computer {
 							((Double[]) o)[j] = new Double(arguments[argumentIndex].asDouble());
 						else if (parameters[n].getName().equals("[Ljava.lang.String;"))
 							((String[]) o)[j] = arguments[argumentIndex].asString();
-						else if (parameters[n].getName().equals("[Lru.megafonvolga.calcutta.data.VariableValue;"))
+						else if (parameters[n].getName().equals("[Lorg.palettelabs.iumls.VariableValue;"))
 							((VariableValue[]) o)[j] = arguments[argumentIndex];
 					}
 				}
@@ -326,18 +326,18 @@ public class Computer {
 			return (VariableValue) obj;
 		} catch (InvocationTargetException e0) {
 			Throwable c = e0.getCause();
-			if (c instanceof CalcuttaToolException)
-				throw (CalcuttaToolException) c;
+			if (c instanceof IumlsException)
+				throw (IumlsException) c;
 			else
-				throw new CalcuttaToolException("Notation::Computer: couldn't invoke library method (library='" + libraryName + "', methodName='" + methodName
+				throw new IumlsException("IUMLS::Computer: couldn't invoke library method (library='" + libraryName + "', methodName='" + methodName
 						+ "')", c);
 		} catch (Exception e) {
-			throw new CalcuttaToolException("Notation::Computer: couldn't invoke library method (library='" + libraryName + "', methodName='" + methodName
+			throw new IumlsException("IUMLS::Computer: couldn't invoke library method (library='" + libraryName + "', methodName='" + methodName
 					+ "')", e);
 		}
 	}
 
-	private VariableValue evaluateLibraryVariable(String libraryName, String variableName) throws CalcuttaToolException {
+	private VariableValue evaluateLibraryVariable(String libraryName, String variableName) throws IumlsException {
 		Library lib = getLibrary(libraryName);
 		Class<?> __class = lib.getClass();
 		//Field[] fields = __class.getDeclaredFields();
@@ -378,10 +378,10 @@ public class Computer {
 				return v;
 			} catch (Exception e) {
 				Throwable c = e.getCause();
-				if (c instanceof CalcuttaToolException)
-					throw (CalcuttaToolException) c;
+				if (c instanceof IumlsException)
+					throw (IumlsException) c;
 				else
-					throw new CalcuttaToolException("Notation::Computer: couldn't extract library variable (library='" + libraryName + "', variableName='"
+					throw new IumlsException("IUMLS::Computer: couldn't extract library variable (library='" + libraryName + "', variableName='"
 							+ variableName + "')", c);
 			}
 		}
@@ -420,10 +420,10 @@ public class Computer {
 				return (VariableValue) obj;
 			} catch (Exception e) {
 				Throwable c = e.getCause();
-				if (c instanceof CalcuttaToolException)
-					throw (CalcuttaToolException) c;
+				if (c instanceof IumlsException)
+					throw (IumlsException) c;
 				else
-					throw new CalcuttaToolException("Notation::Computer: couldn't extract library variable (library='" + libraryName + "', variableName='"
+					throw new IumlsException("IUMLS::Computer: couldn't extract library variable (library='" + libraryName + "', variableName='"
 							+ variableName + "')", c);
 			}
 		}
@@ -454,18 +454,18 @@ public class Computer {
 				return (VariableValue) obj;
 			} catch (Exception e) {
 				Throwable c = e.getCause();
-				if (c instanceof CalcuttaToolException)
-					throw (CalcuttaToolException) c;
+				if (c instanceof IumlsException)
+					throw (IumlsException) c;
 				else
-					throw new CalcuttaToolException("Notation::Computer: couldn't extract library variable (library='" + libraryName + "', variableName='" + variableName + "')", c);
+					throw new IumlsException("IUMLS::Computer: couldn't extract library variable (library='" + libraryName + "', variableName='" + variableName + "')", c);
 			}
 		}
 
-		throw new CalcuttaToolException("Notation::Computer: no variable '" + variableName + "' found in library '" + libraryName + "'");
+		throw new IumlsException("IUMLS::Computer: no variable '" + variableName + "' found in library '" + libraryName + "'");
 
 	}
 
-	private VariableValue evaluateLibraryOperator(String libraryName, String operatorString, VariableValue[] args) throws CalcuttaToolException {
+	private VariableValue evaluateLibraryOperator(String libraryName, String operatorString, VariableValue[] args) throws IumlsException {
 
 		Library lib = getLibrary(libraryName);
 		Class<?> __class = lib.getClass();
@@ -505,19 +505,18 @@ public class Computer {
 				return (VariableValue) obj;
 			} catch (Exception e) {
 				Throwable c = e.getCause();
-				if (c instanceof CalcuttaToolException)
-					throw (CalcuttaToolException) c;
+				if (c instanceof IumlsException) throw (IumlsException) c;
 				else
-					throw new CalcuttaToolException("Notation::Computer: couldn't extract library variable (library='" + libraryName + "', operatorString='"
+					throw new IumlsException("IUMLS::Computer: couldn't extract library variable (library='" + libraryName + "', operatorString='"
 							+ operatorString + "')", c);
 			}
 		}
 
-		throw new CalcuttaToolException("Notation::Computer: no operator '" + operatorString + "' found in library '" + libraryName + "'");
+		throw new IumlsException("IUMLS::Computer: no operator '" + operatorString + "' found in library '" + libraryName + "'");
 
 	}
 
-	private VariableValue evaluateOperator(String operatorString, VariableValue[] args) throws CalcuttaToolException {
+	private VariableValue evaluateOperator(String operatorString, VariableValue[] args) throws IumlsException {
 		OperatorData data = this.operators.get(operatorString);
 		String libraryName = null;
 		if (data != null)
@@ -557,7 +556,7 @@ public class Computer {
 			obj = new Double(value.asDouble());
 		else if (__class.getName().equals("java.lang.String"))
 			obj = value.asString();
-		else if (__class.getName().equals("ru.megafonvolga.calcutta.data.VariableValue"))
+		else if (__class.getName().equals("org.palettelabs.iumls.VariableValue"))
 			obj = value;
 
 		return obj;
@@ -565,7 +564,7 @@ public class Computer {
 
 	private boolean isSupportedType(Class<?> __class) {
 		return isOneOf(__class.getName(), "int", "java.lang.Integer", "boolean", "java.lang.Boolean", "long", "java.lang.Long", "double", "java.lang.Double",
-				"java.lang.String", "ru.megafonvolga.calcutta.data.VariableValue");
+				"java.lang.String", "org.palettelabs.iumls.VariableValue");
 	}
 
 	private boolean isOneOf(String s, String... list) {
