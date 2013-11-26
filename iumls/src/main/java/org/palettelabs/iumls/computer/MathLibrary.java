@@ -1,6 +1,6 @@
 package org.palettelabs.iumls.computer;
 
-import ru.megafonvolga.calcutta.data.VariableValue;
+import org.palettelabs.iumls.VariableValue;
 
 public class MathLibrary implements Library {
 

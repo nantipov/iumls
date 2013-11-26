@@ -7,73 +7,54 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import org.palettelabs.iumls.NotationException;
+import org.palettelabs.iumls.IumlsException;
 
 /**
  * Well, this a class that manages all grammar parsing stuff regarding to
- * notations texts. What does it mean?<br>
+ * IUMLS-language texts. What does it mean?<br>
  * <br>
- * Rate-notation basically is just a text which describes some piece
- * of rating rule. It might be flat rates, rates with discounts,
- * rates with intermediate states/accumulators, etc.<br>
+ * Here we use the 'notation' word to point for language itself. Basically,
+ * notation is very simple and consist of three base <i>parser entity</i> blocks: section,
+ * array and expression.
  * <br>
- * Notation looks like.
- * 
- * <pre>
- * 		#main {
- * 			title = "rating rule title";
- * 			condition =
- * 						contains(call.field("rec_type"), "01", "02") &&
- * 						call.field("duration") > 50;
- * 			bands = [
- * 				band {
- * 					level = "call"; // refers to 'call' or 'set' environment
- * 					range = #range {
- * 						unit = "minutes";
- * 						from = 1; // it also could be -inf
- * 						to = 2; // or even +inf
- * 					};
- * 					rate = #rate {
- * 						rounding = #rounding {
- * 							unit_volume = 60; // 1 rate unit = call units / 'unit_volume'
- * 							round_step = 
- * 						};
- * 						unit_price = 50;
- * 						call_fee_price = 0.5;
- * 						call_price = 100; // or even whole call price
- * 					}
- * 					condition = condition { // optional section
- * 						...
- * 					}
- * 				},
- * 				band {
- * 					level = "set";
- * 					range = #range {
- * 						unit = "count"; // for example from 0th to 50th call
- * 						from = 0;
- * 						to = 50;
- * 					}
- * 					...
- * 				}
- * 			]
- * 		}
- * </pre>
- *
- *  <br>
- *
  *  Syntax structures.<br>
  *  <br>
  *	<pre>
- *  section ::= &lt;section_name&gt; <b>{</b>
+ *  <b>section</b> ::= &lt;section_name&gt; <b>{</b>
  *  			&lt;entity&gt; <b>=</b> &lt;expression&gt; | &lt;section&gt; | &lt;array&gt;<b>;</b> 
  *  	<b>}</b>
- *  section_name ::= #a-zA-Z0-9
- *  entity ::= a-zA-Z0-9
- *  expression ::= classical expressions stuff with identifiers, numbers and functions
- *  array ::= <b>[</b>&lt;expression&gt; | &lt;section&gt;[, &lt;expression&gt; | &lt;section&gt;...]<b>]</b>
+ *  <b>section_name</b> ::= #a-zA-Z0-9
+ *  <b>entity</b> ::= a-zA-Z0-9
+ *  <b>expression</b> ::= classical expressions stuff with identifiers, numbers and functions
+ *  <b>array</b> ::= <b>[</b>&lt;expression&gt; | &lt;section&gt;[, &lt;expression&gt; | &lt;section&gt;...]<b>]</b>
  *  </pre>
+ * The highest level of notation is always a 'Section', so therefore each notation
+ * starts with '#section' name.
+ * <br>
+ * Furthermore, feel free to mention comment blocks:
+ * <ul>
+ * 	<li><b>line comment</b> - #any_notation_text { <b>&frasl;&frasl; comment here </b><i>LINE-BREAK</i>;</li>
+ * 	<li><b>block comment</b> - #any_notation_text { <b>&frasl;* comment here *&frasl;</b> a = ["notation text continues"]; }.</li>
+ * </ul>
+ *
+ * Notation looks like.
+ * 
+ * <pre>
+ *	#shop {
+ *		fruits = [
+ * 		"orange",
+ *			[
+ *				"apple",
+ *				"lemon"
+ *			] // like a box
+ *		];
+ *		another_goods = [
+ *			"item1";
+ *		];
+ *	}
+ * </pre>
  *  
- * @author nikolay.antipov
+ * @author Nikolay Antipov
  *
  */
 public class Parser {
@@ -117,7 +98,7 @@ public class Parser {
 	 * @param notationText - text of notation to parse
 	 * @return returns 'Parser' object
 	 */
-	public static Parser parse(String notationText) throws NotationException {
+	public static Parser parse(String notationText) throws IumlsException {
 		if (Parser.parseCache.containsKey(notationText)) {
 			return Parser.parseCache.get(notationText);
 		} else {
@@ -127,7 +108,7 @@ public class Parser {
 		}
 	}
 
-	public void parse() throws NotationException {
+	public void parse() throws IumlsException {
 
 		final int STATE_START = 0;
 
@@ -692,7 +673,7 @@ public class Parser {
 			}
 			else this.errorText = "unexpected end of script";
 
-			throw new NotationException(this, this.errorText, position, line, column);
+			throw new IumlsException(this, this.errorText, position, line, column);
 
 		}
 
