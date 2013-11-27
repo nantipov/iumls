@@ -13,7 +13,7 @@ public class MathLibrary implements Library {
 		{
 			v.set(v1.asString() + v2.asString());
 		} else {
-			v.set(v1.asLong() + v2.asLong());
+			v.set(v1.asDouble() + v2.asDouble());
 		}
 		return v;
 	}
@@ -25,15 +25,20 @@ public class MathLibrary implements Library {
 	}
 
 	@Operator("*")
-	public VariableValue operatorMultiply(long v1, long v2) {
+	public VariableValue operatorMultiply(double v1, double v2) {
 		VariableValue v = new VariableValue(v1 * v2);
 		return v;
 	}
 
 	@Operator("/")
-	public VariableValue operatorDivide(long v1, long v2) {
+	public VariableValue operatorDivide(double v1, double v2) {
 		VariableValue v = new VariableValue(v1 / v2);
 		return v;
+	}
+
+	@Method
+	public VariableValue abs(double a) {
+		return new VariableValue(Math.abs(a));
 	}
 
 }

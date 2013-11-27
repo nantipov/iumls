@@ -46,7 +46,7 @@ import org.palettelabs.iumls.IumlsException;
  *				"lemon"
  *			] // like a box
  *		];
- *		another_goods = [
+ *		other_goods = [
  *			"item1";
  *		];
  *	}
@@ -691,20 +691,21 @@ public class Parser {
 		return ((c == ' ') || (c == '\t') || (c == '\n') || (c == '\r'));
 	}
 
-	private boolean isOneOf(int state, int ...list) {
+	private boolean isOneOf(int value, int ...list) {
+		// method covers either int and char types
 		for (int f = 0; f < list.length; f++) {
-			if (list[f] == state) return true;
+			if (list[f] == value) return true;
 		}
 		return false;
 	}
-
+/*
 	private boolean isOneOf(char c, char ...list) {
 		for (int f = 0; f < list.length; f++) {
 			if (list[f] == c) return true;
 		}
 		return false;
 	}
-
+*/
 	private boolean isEntityStarted(char c) {
 		return 
 				isOneOf(c, '[', '#') ||
