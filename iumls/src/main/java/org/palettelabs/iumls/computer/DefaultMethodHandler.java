@@ -14,15 +14,23 @@ import java.lang.annotation.Target;
  * Target method must have two arguments:
  * <ul>
  * 	<li>notation method name as 'String';</li>
- *  <li>notation method arguments 'VariableValue[]'.</li>
+ *  <li>notation method arguments 'org.palettelabs.iumls.VariableValue[]'.</li>
  * </ul>
  * <br>
- * Return type is 'VariableValue'.
+ * Return type is {@link org.palettelabs.iumls.VariableValue}.
+ * <br>
+ * <b>Example 1</b>
+ * <pre>
+ * &#64;DefaultMethodHandler
+ * public VariableValue handleMethod(String methodName, VariableValue... values) {
+ *   return new VariableValue("everything you want");
+ * }
+ * </pre>
  * 
- * @author nikolay.antipov
+ * @author Nikolay Antipov
  *
  */
-@Target(value = {ElementType.METHOD, ElementType.FIELD})
+@Target(value = {ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface DefaultMethodHandler {
 
