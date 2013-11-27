@@ -17,6 +17,35 @@ import org.palettelabs.iumls.parser.ExpressionElement;
 import org.palettelabs.iumls.parser.NotationElement;
 import org.palettelabs.iumls.utils.NumberConverter;
 
+/**
+ * 
+ * Performs computation of {@link Expression} using connected libraries ({@link Library})
+ * and operators.
+ * <br>
+ * By default 'Computer' has only two libraries connected:
+ * <ul>
+ * 	<li>system - {@link SystemLibrary};</li>
+ * 	<li>math - {@link MathLibrary}.</li>
+ * </ul>
+ * 
+ * Notation points to library with prefix of identifier
+ * (<i>a = ["orange", "lemon", google.ImFeelingLucky("fruit")];)</i>
+ * if it presents,
+ * otherwise 'system' library is used (<i>a = [true, false];</i>).
+ * <br>
+ * <br>
+ * <b>Tip 1</b>
+ * <br>
+ * Of course, it is possible to override library with another one.
+ * <br>
+ * <br>
+ * <b>Tip 2</b>
+ * <br>
+ * Do not hesitate to inherit (extend) existing libraries if needed.
+ * 
+ * @author Nikolay Antipov
+ *
+ */
 public class Computer {
 
 	private Map<String, Library> libraries = new HashMap<String, Library>();
@@ -27,6 +56,28 @@ public class Computer {
 		String libraryName;
 	}
 
+	/**
+	 * Creates default 'Computer' with libraries:
+	 * <ul>
+	 * 	<li>"system" {@link SystemLibrary};</li>
+	 * 	<li>"math" {@link MathLibrary},</li>
+	 * </ul>
+	 * and operators (and their precedence level):
+	 * <ul>
+	 * 	<li>"==" (1) references to library "system";</li>
+	 * 	<li>"!=" (1) references to library "system";</li>
+	 * 	<li>"||" (2) references to library "system";</li>
+	 * 	<li>"&&" (3) references to library "system";</li>
+	 * 	<li>">" (4) references to library "system";</li>
+	 * 	<li>"<" (4) references to library "system";</li>
+	 * 	<li>">=" (4) references to library "system";</li>
+	 * 	<li>"<=" (4) references to library "system";</li>
+	 * 	<li>"+" (5) references to library "math";</li>
+	 * 	<li>"-" (5) references to library "math";</li>
+	 * 	<li>"*" (6) references to library "math";</li>
+	 * 	<li>"/" (6) references to library "math".</li>
+	 * </ul>
+	 */
 	public Computer() {
 		addLibrary("system", new SystemLibrary());
 		addLibrary("math", new MathLibrary());
@@ -47,10 +98,23 @@ public class Computer {
 
 	}
 
+	/**
+	 * Registers new library or replaces old one with the same name.
+	 * @param name - name of library (<i>google.ImFeelingLucky("fruit")</i>,
+	 * 	where '<i>google</i>' is a name of library)
+	 * @param library - object which implements the {@link Library}
+	 */
 	public void addLibrary(String name, Library library) {
 		this.libraries.put(name, library);
 	}
 
+	/**
+	 * Registers new operator or replaces old one with the same name.
+	 * @param operatorString - operator as string (<i>b = a my_infix_operator 2;</i>,
+	 *  where "<i>my_infix_operator</i>" is a operator string)
+	 * @param libraryName - name of library where operator is implemented
+	 * @param priority - precedence of operator (greater number has a greater precedence)
+	 */
 	public void registerOperator(String operatorString, String libraryName, int priority) {
 		OperatorData data;
 		if (this.operators.containsKey(operatorString)) {
@@ -63,6 +127,12 @@ public class Computer {
 		data.priority = priority;
 	}
 
+	/**
+	 * Computes {@link Expression} object.
+	 * @param expression - expression to compute
+	 * @return result of expression
+	 * @throws IumlsException throws exception in any case of problem (for example, no method found or division by zero)
+	 */
 	public VariableValue compute(Expression expression) throws IumlsException {
 		return compute(expression.getBaseElement());
 	}

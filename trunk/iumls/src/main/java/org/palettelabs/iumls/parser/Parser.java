@@ -1,10 +1,8 @@
 package org.palettelabs.iumls.parser;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
 
 import org.palettelabs.iumls.IumlsException;
@@ -59,8 +57,6 @@ import org.palettelabs.iumls.IumlsException;
  */
 public class Parser {
 
-	private static Map<String, Parser> parseCache = new HashMap<String, Parser>();
-
 	private String notationText;
 
 	private String[] defaultOperators = {"+", "-", "*", "/", "==", "!=", ">", "<", ">=", "<=", "&&", "||"};
@@ -77,11 +73,20 @@ public class Parser {
 	protected int errorColumn = 0;
 	protected int errorLine = 0;
 
+	/**
+	 * Constructs parser with notation text.
+	 * @param notationText - text to parse
+	 */
 	public Parser(String notationText) {
 		this.notationText = notationText;
 		buildOperatorsSet(defaultOperators);
 	}
 
+	/**
+	 * Constructs parser with notation text and list of operators.
+	 * @param notationText - text to parse
+	 * @param operators - list of operators
+	 */
 	public Parser(String notationText, String ...operators) {
 		this.notationText = notationText;
 		buildOperatorsSet(operators);
@@ -92,22 +97,9 @@ public class Parser {
 	}
 
 	/**
-	 * Checks if notation has been already parsed and
-	 * performs grammar parsing from the scratch if not.
-	 * 
-	 * @param notationText - text of notation to parse
-	 * @return returns 'Parser' object
+	 * Parsers specified notation.
+	 * @throws IumlsException throws in case of any grammar error
 	 */
-	public static Parser parse(String notationText) throws IumlsException {
-		if (Parser.parseCache.containsKey(notationText)) {
-			return Parser.parseCache.get(notationText);
-		} else {
-			Parser parser = new Parser(notationText);
-			parser.parse();
-			return parser;
-		}
-	}
-
 	public void parse() throws IumlsException {
 
 		final int STATE_START = 0;
@@ -860,6 +852,10 @@ public class Parser {
 		}
 	}
 
+	/**
+	 * Returns parser tree as its root element.
+	 * @return root of tree;
+	 */
 	public Section getRootSection() {
 		return this.rootSection;
 	}
@@ -869,6 +865,10 @@ public class Parser {
 		return this.rootSection.toString();
 	}
 
+	/**
+	 * Return string representation of grammar error with line numbers.
+	 * @return text representation of grammar error
+	 */
 	public String getErrorInNotation() {
 		String text = this.notationText;
 		text = text.replaceAll("\r", " ");
